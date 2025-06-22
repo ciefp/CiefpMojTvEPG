@@ -138,10 +138,10 @@ class MainScreen(Screen):
             ("Eurosport 2", "494.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=494", "494"),
         ]
         self.focus_on_channels = True
-        self.picon_dir = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTVEPG/picon"
-        self.placeholder_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTVEPG/picon/placeholder.png"
-        self.plugin_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTVEPG/picon/plugin.png"
-        self.plugin2_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTVEPG/picon/plugin2.png"
+        self.picon_dir = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon"
+        self.placeholder_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/placeholder.png"
+        self.plugin_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/plugin.png"
+        self.plugin2_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/plugin2.png"
         self.tmp_dir = "/tmp/CiefpMojTvEPG"
         
         if requests is None:
