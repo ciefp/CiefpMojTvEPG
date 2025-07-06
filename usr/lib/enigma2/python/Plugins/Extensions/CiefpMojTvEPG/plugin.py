@@ -29,7 +29,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = "1.1"
+PLUGIN_VERSION = "1.2"
 
 class MainScreen(Screen):
     skin = """
@@ -57,7 +57,7 @@ class MainScreen(Screen):
                 "up": self.moveUp,
                 "down": self.moveDown
             }, -2)
-        self.channels =  [
+        self.channels = [
             ("RTS1", "33.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=33", "33"),
             ("RTS2", "34.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=34", "34"),
             ("RTS3", "443.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=443", "443"),
@@ -115,26 +115,24 @@ class MainScreen(Screen):
             ("MTV", "165.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=165", "165"),
             ("MTV Hits", "46.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=46", "46"),
             ("Mezzo", "227.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=227", "227"),
-            ("Cartoon Network", "248.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=248", "248"),
+            ("Cartoon Network ", "248.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=248", "248"),
             ("Nickelodeon", "88.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=88", "88"),
             ("Mini TV", "89.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=89", "89"),
             ("Pink Kids", "411.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=411", "411"),
             ("Pink Super Kids", "469.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=469", "469"),
             ("Da Vinci Learning", "269.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=269", "269"),
             ("Das Erste HD", "170.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=170", "170"),
-            ("Arena Sport Premium 1", "719.png", "https://www.tvarenasport.com/tv-scheme", "719", "chanel-a1p.png"),
-            ("Arena Sport Premium 2", "720.png", "https://www.tvarenasport.com/tv-scheme", "720", "chanel-a2p.png"),
-            ("Arena Sport Premium 3", "721.png", "https://www.tvarenasport.com/tv-scheme", "721", "chanel-a3p.png"),
-            ("Arena Sport 1", "349.png", "https://www.tvarenasport.com/tv-scheme", "349", "chanel-01.png"),
-            ("Arena Sport 2", "350.png", "https://www.tvarenasport.com/tv-scheme", "350", "chanel-02.png"),
-            ("Arena Sport 3", "351.png", "https://www.tvarenasport.com/tv-scheme", "351", "chanel-03.png"),
-            ("Arena Sport 4", "352.png", "https://www.tvarenasport.com/tv-scheme", "352", "chanel-04.png"),
-            ("Arena Sport 5", "398.png", "https://www.tvarenasport.com/tv-scheme", "398", "chanel-05.png"),
-            ("Arena Sport 6", "710.png", "https://www.tvarenasport.com/tv-scheme", "710", "chanel-06.png"),
-            ("Arena Sport 7", "711.png", "https://www.tvarenasport.com/tv-scheme", "711", "chanel-07.png"),
-            ("Arena Sport 8", "712.png", "https://www.tvarenasport.com/tv-scheme", "712", "chanel-08.png"),
-            ("Arena Sport 9", "713.png", "https://www.tvarenasport.com/tv-scheme", "713", "chanel-09.png"),
-            ("Arena Sport 10", "714.png", "https://www.tvarenasport.com/tv-scheme", "714", "chanel-10.png"),
+            ("Arena Sport Premium 1", "719.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=719", "719"),
+            ("Arena Sport Premium 2", "720.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=720", "720"),
+            ("Arena Sport Premium 3", "721.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=721", "721"),
+            ("Arena Sport 1", "349.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=349", "349"),
+            ("Arena Sport 2", "350.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=350", "350"),
+            ("Arena Sport 3", "351.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=351", "351"),
+            ("Arena Sport 4", "352.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=352", "352"),
+            ("Arena Sport 5", "398.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=398", "398"),
+            ("Arena Sport 6", "710.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=710", "710"),
+            ("Arena Sport 7", "711.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=711", "711"),
+            ("Arena Sport 8", "712.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=712", "712"),
             ("Eurosport 1", "493.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=493", "493"),
             ("Eurosport 2", "494.png", "https://mojtv.net/m2/tv-program/kanal.aspx?id=494", "494"),
         ]
@@ -316,10 +314,16 @@ class MainScreen(Screen):
                 f.write(html)
             epg_list = []
             now = datetime.now()
-            program_rows = re.findall(
-                r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?<span style=\'font-size:14px;[^>]*>(.*?)</span>',
-                html, re.DOTALL
-            )
+            # Define regex patterns for different channel types
+            regex_patterns = {
+                'sport_channels': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?<em[^>]*>(.*?)</em>',
+                'default': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?<span style=\'font-size:14px;[^>]*>(.*?)</span>'
+            }
+            # Select regex based on channel name
+            selected_channel = self["channel_list"].getCurrent()
+            pattern = regex_patterns['sport_channels'] if selected_channel and ('Arena Sport' in selected_channel or 'Eurosport' in selected_channel) else regex_patterns['default']
+            program_rows = re.findall(pattern, html, re.DOTALL)
+            logger.debug(f"Regex matches for channel {channel_id}: {program_rows}")
             for time_str, title, description in program_rows:
                 try:
                     start_time = datetime.strptime(time_str, "%H:%M")
@@ -327,7 +331,7 @@ class MainScreen(Screen):
                     epg_list.append({
                         "start": time_str,
                         "title": title.strip(),
-                        "description": description.strip()
+                        "description": description.strip() or "No description available"
                     })
                 except ValueError:
                     continue
@@ -423,7 +427,7 @@ def main(session, **kwargs):
 def Plugins(**kwargs):
     return PluginDescriptor(
         name="CiefpMojTvEPG",
-        description=f"EPG plugin using MojTV data(Version {PLUGIN_VERSION})",
+        description=f"EPG plugin using MojTV data (Version {PLUGIN_VERSION})",
         where=PluginDescriptor.WHERE_PLUGINMENU,
         icon="icon.png",
         fnc=main
