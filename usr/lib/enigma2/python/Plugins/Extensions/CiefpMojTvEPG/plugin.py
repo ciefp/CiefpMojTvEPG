@@ -71,7 +71,7 @@ class MainScreen(Screen):
             ("PRVA", "38.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=38", "38"),
             ("PRVA PLUS", "408.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=408", "408"),
             ("Prva Max", "534.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=534", "534"),
-            ("ρίζа World", "535.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=535", "535"),
+            ("Prva World", "535.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=535", "535"),
             ("Prva Kick", "637.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=637", "637"),
             ("Prva Files", "644.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=644", "644"),
             ("Prva Life", "642.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=642", "642"),
@@ -314,20 +314,19 @@ class MainScreen(Screen):
                 f.write(html)
             epg_list = []
             now = datetime.now()
-            # Define regex patterns for different channel types
             regex_patterns = {
-                'sport_channels': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?<em[^>]*>(.*?)</em>',
-                'default': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?<span style=\'font-size:14px;[^>]*>(.*?)</span>'
+                'sport_channels': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?(?:<em[^>]*>(.*?)</em>|<span style=\'font-size:14px;[^>]*>(.*?)</span>)?',
+                'default': r'<span class="show-time"[^>]*><b>(\d{2}:\d{2})</b></span>.*?<span style="font-size:16px; white-space:normal"><b>([^<]+)</b>.*?(?:<em[^>]*>(.*?)</em>|<span style=\'font-size:14px;[^>]*>(.*?)</span>)?'
             }
-            # Select regex based on channel name
             selected_channel = self["channel_list"].getCurrent()
             pattern = regex_patterns['sport_channels'] if selected_channel and ('Arena Sport' in selected_channel or 'Eurosport' in selected_channel) else regex_patterns['default']
             program_rows = re.findall(pattern, html, re.DOTALL)
             logger.debug(f"Regex matches for channel {channel_id}: {program_rows}")
-            for time_str, title, description in program_rows:
+            for time_str, title, em_desc, span_desc in program_rows:
                 try:
                     start_time = datetime.strptime(time_str, "%H:%M")
                     start_time = start_time.replace(year=now.year, month=now.month, day=now.day)
+                    description = em_desc or span_desc or "No description available"
                     epg_list.append({
                         "start": time_str,
                         "title": title.strip(),
@@ -364,6 +363,24 @@ class MainScreen(Screen):
                 logger.debug(f"EPG loaded for {channel[0]}: {len(epg_data)} entries")
                 if epg_data:
                     self["error_label"].setText("")  # Clear error message on success
+                    # Set focus to the currently airing program
+                    now = datetime.now()
+                    current_index = 0
+                    for index, epg_entry in enumerate(epg_data):
+                        start_time = epg_entry['start']
+                        try:
+                            start_dt = datetime.strptime(start_time, "%H:%M")
+                            start_dt = start_dt.replace(year=now.year, month=now.month, day=now.day)
+                            # Assume a program duration (e.g., 1 hour) since end time isn't provided
+                            end_dt = start_dt + timedelta(hours=1)
+                            if start_dt <= now <= end_dt:
+                                current_index = index
+                                logger.debug(f"Found currently airing program at index {current_index}: {epg_entry['start']} - {epg_entry['title']}")
+                                break
+                        except ValueError:
+                            continue
+                    self["epg_list"].moveToIndex(current_index)
+                    logger.debug(f"EPG selection set to index {current_index} for channel {channel[0]}")
                 else:
                     self["error_label"].setText("No EPG data available!")
                 self.updateLogo()
