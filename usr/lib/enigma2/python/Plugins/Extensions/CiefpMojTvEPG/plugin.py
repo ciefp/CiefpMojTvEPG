@@ -12,7 +12,6 @@ import os
 import time
 from enigma import eTimer
 import logging
-
 try:
     import requests
 except ImportError:
@@ -29,26 +28,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PLUGIN_VERSION = "1.3"
+PLUGIN_VERSION = "1.4"
 
 class MainScreen(Screen):
     skin = """
-    <screen name="CiefpMojTvEPG" position="center,center" size="1800,800" title="..:: CiefpMojTvEPG ::..">
-        <widget name="channel_list" position="10,10" size="400,627" scrollbarMode="showAlways" itemHeight="33" font="Regular;28" />
-        <widget name="epg_list" position="420,10" size="1360,627" scrollbarMode="showAlways" itemHeight="33" font="Regular;28" />
-        <widget name="channel_logo" position="10,660" size="220,132" alphatest="on" />
-        <widget name="plugin_logo" position="240,660" size="220,132" alphatest="on" />
-        <widget name="error_label" position="420,360" size="1160,80" font="Regular;30" halign="center" valign="center" transparent="1" />
-        <widget name="plugin2_logo" position="450,660" size="1350,132" alphatest="on" />
+    <screen name="CiefpMojTvEPG" position="center,center" size="1920,1080" backgroundColor="#011a2e" >
+        <widget name="title" render="Label" position="0,20" size="1920,60" font="Regular;34" halign="center" valign="center" foregroundColor="#00FF00" title="..:: CiefpMojTvEPG ::.." backgroundColor="#050505" zPosition="3" />
+        <widget name="channel_list" position="10,100" size="300,792" scrollbarMode="showAlways" itemHeight="33" font="Regular;28" backgroundColor="#011a2e" />
+        <widget name="epg_list" position="320,100" size="900,792" scrollbarMode="showAlways" itemHeight="33" font="Regular;28" backgroundColor="#011a2e" />
+        <widget name="plugin_background" position="1220,100" size="700,792" alphatest="on" zPosition="1" />
+        <widget name="channel_logo" position="10,920" size="220,132" alphatest="on" />
+        <widget name="plugin_logo" position="240,920" size="220,132" alphatest="on" />
+        <widget name="error_label" position="0,860" size="1160,80" font="Regular;30" halign="center" valign="center" transparent="1" />
+        <widget name="plugin2_logo" position="450,920" size="1480,132" alphatest="on" />
     </screen>"""
 
     def __init__(self, session):
         Screen.__init__(self, session)
         self["channel_list"] = MenuList([], enableWrapAround=True)
         self["epg_list"] = MenuList([], enableWrapAround=True)
+        self["title"] = Label("..:: CiefpMojTvEPG  ::..")
         self["channel_logo"] = Pixmap()
         self["plugin_logo"] = Pixmap()
         self["plugin2_logo"] = Pixmap()
+        self["plugin_background"] = Pixmap()
         self["error_label"] = Label("")
         self["actions"] = ActionMap(["OkCancelActions", "DirectionActions"],
             {
@@ -57,6 +60,7 @@ class MainScreen(Screen):
                 "up": self.moveUp,
                 "down": self.moveDown
             }, -2)
+        
         self.channels = [
             ("RTS1", "33.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=33", "33"),
             ("RTS2", "34.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=34", "34"),
@@ -136,18 +140,23 @@ class MainScreen(Screen):
             ("Eurosport 1", "493.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=493", "493"),
             ("Eurosport 2", "494.png", "https://mojtv.hr/m2/tv-program/kanal.aspx?id=494", "494"),
         ]
+        
         self.focus_on_channels = True
         self.picon_dir = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon"
         self.placeholder_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/placeholder.png"
         self.plugin_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/plugin.png"
         self.plugin2_icon = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/picon/plugin2.png"
+        
+        # Preimenovano u _path kako ne bi bilo zabune s imenom widgeta self["plugin_background"]
+        self.plugin_background_path = "/usr/lib/enigma2/python/Plugins/Extensions/CiefpMojTvEPG/plugin_background.png"
+        
         self.tmp_dir = "/tmp/CiefpMojTvEPG"
         
         if requests is None:
             self["error_label"].setText("Error: python3-requests is not installed!")
             logger.error("python3-requests is not installed!")
             return
-
+            
         # Create picon directory if it doesn't exist
         if not os.path.exists(self.picon_dir):
             try:
@@ -157,7 +166,7 @@ class MainScreen(Screen):
                 logger.error(f"Error creating picon directory: {str(e)}")
                 self["error_label"].setText(f"Error creating picon directory: {str(e)}")
                 return
-
+                
         # Create tmp directory if it doesn't exist
         if not os.path.exists(self.tmp_dir):
             try:
@@ -167,9 +176,10 @@ class MainScreen(Screen):
                 logger.error(f"Error creating tmp directory: {str(e)}")
                 self["error_label"].setText(f"Error creating tmp directory: {str(e)}")
                 return
-
+                
         self.loadChannels()
         self.downloadLogos()
+        
         self.initTimer = eTimer()
         self.initTimer.callback.append(self.delayedInit)
         self.initTimer.start(100, True)
@@ -179,6 +189,7 @@ class MainScreen(Screen):
             self.updateEPG()
             self.updatePluginLogo()
             self.updatePlugin2Logo()
+            self.updatePluginBackground()  # <-- DODANO: Poziv metode za prikaz pozadine
         except Exception as e:
             logger.error(f"Error in delayedInit: {str(e)}")
             self["error_label"].setText(f"Error initializing EPG: {str(e)}")
@@ -227,7 +238,6 @@ class MainScreen(Screen):
                             logger.warning(f"Failed to load pixmap for placeholder icon: {self.placeholder_icon}")
                     else:
                         logger.warning(f"Logo not found: {logo_path}, placeholder icon also missing: {self.placeholder_icon}")
-                
                 if pixmap and self["channel_logo"].instance:
                     try:
                         self["channel_logo"].instance.setPixmap(pixmap)
@@ -248,7 +258,6 @@ class MainScreen(Screen):
                 logger.warning(f"Failed to load pixmap for plugin logo: {self.plugin_icon}")
         else:
             logger.warning(f"Plugin logo not found: {self.plugin_icon}")
-        
         if pixmap and self["plugin_logo"].instance:
             try:
                 self["plugin_logo"].instance.setPixmap(pixmap)
@@ -268,7 +277,6 @@ class MainScreen(Screen):
                 logger.warning(f"Failed to load pixmap for plugin2 logo: {self.plugin2_icon}")
         else:
             logger.warning(f"Plugin2 logo not found: {self.plugin2_icon}")
-        
         if pixmap and self["plugin2_logo"].instance:
             try:
                 self["plugin2_logo"].instance.setPixmap(pixmap)
@@ -277,6 +285,27 @@ class MainScreen(Screen):
                 logger.error(f"Error setting plugin2 logo: {str(e)}")
         else:
             logger.debug(f"Plugin2 logo widget not initialized or pixmap not loaded")
+
+    def updatePluginBackground(self):
+        pixmap = None
+        if os.path.exists(self.plugin_background_path):
+            pixmap = LoadPixmap(self.plugin_background_path)
+            if pixmap:
+                logger.debug(f"Successfully loaded plugin background: {self.plugin_background_path}")
+            else:
+                logger.warning(f"Failed to load pixmap for plugin background: {self.plugin_background_path}")
+        else:
+            logger.warning(f"Plugin background not found: {self.plugin_background_path}")
+            
+        if pixmap and self["plugin_background"].instance:
+            try:
+                self["plugin_background"].instance.setPixmap(pixmap)
+                self["plugin_background"].instance.setScale(1)  # <-- DODANO: Skaliranje slike na veličinu widgeta
+                logger.debug(f"Plugin background set: {self.plugin_background_path}")
+            except Exception as e:
+                logger.error(f"Error setting plugin background: {str(e)}")
+        else:
+            logger.debug(f"Plugin background widget not initialized or pixmap not loaded")
 
     def fetchEPG(self, url, channel_id):
         cache_file = os.path.join(self.tmp_dir, f"epg_{channel_id}.cache")
@@ -298,7 +327,6 @@ class MainScreen(Screen):
                 except Exception as e:
                     logger.error(f"Error reading cache for {channel_id}: {str(e)}")
                     os.remove(cache_file)
-
         try:
             logger.debug(f"Fetching EPG from {url}")
             headers = {
